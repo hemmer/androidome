@@ -35,34 +35,44 @@ public class MonomeView extends View{
 	String hostIPAddress = "192.168.1.164";
 
 	Boolean[][] gridLit;
-	
+
 	private long _moveDelay = 10;
 
 	private RefreshHandler _redrawHandler = new RefreshHandler();
 
-    class RefreshHandler extends Handler {
+	class RefreshHandler extends Handler {
 
-        @Override
-        public void handleMessage(Message message) {
-            MonomeView.this.update();
-            MonomeView.this.invalidate();
-        }
+		@Override
+		public void handleMessage(Message message) {
+			MonomeView.this.update();
+			MonomeView.this.invalidate();
+		}
 
-        public void sleep(long delayMillis) {
-        	removeMessages(0);
-            sendMessageDelayed(obtainMessage(0), delayMillis);
-        }
-    };
-    
+		public void sleep(long delayMillis) {
+			removeMessages(0);
+			sendMessageDelayed(obtainMessage(0), delayMillis);
+		}
+	};
+
 	private void update() {
 		_redrawHandler.sleep(_moveDelay);
 	}
+
+	long start;
 	
 	public MonomeView(Context context, AttributeSet attrs) {
 		super(context, attrs);
+
+		start = System.currentTimeMillis();
 		
 		update();
 
+		// initialise grid to store
+		// LED status
+		gridLit = new Boolean[8][8];
+		// and clear it 
+		resetGrid(0);
+		
 		// create listener/port objects
 		try {
 			oscPortIn = new OSCPortIn(8080);
@@ -72,47 +82,56 @@ public class MonomeView extends View{
 
 		listener = new OSCListener() {
 			public void acceptMessage(java.util.Date time, OSCMessage message) {
-				String add = message.getAddress();
+				String address = message.getAddress().trim();
 				Object[] args = message.getArguments(); 
+				Log.i("Test2", address);
 
-				if(add.trim().substring(add.length()-4).equalsIgnoreCase("/led") && args.length == 3){
-					try{
+				// if the incoming messages are addressed to us,
+				// i.e incoming prefix matches the stored prefix 
+				if(address.substring(1, prefix.length()+1).equalsIgnoreCase(prefix)){
+					address = address.substring(prefix.length()+2);
+					Log.i("Test", address);
+
+					// most likely message is led calls 
+					// NOTE: must check that we have 3 arguments (x, y, on/off)
+					if(address.equalsIgnoreCase("led") && args.length == 3){
 						setLED(Integer.parseInt(args[0].toString()), Integer.parseInt(args[1].toString()), args[2].toString());
-					}catch (NullPointerException e){
-						Log.e("NPE", e.toString());
+					}
+					// check for message to clear the board
+					else if(address.equalsIgnoreCase("clear") && args.length == 1){
+						resetGrid(Integer.parseInt(args[0].toString()));
 					}
 				}
 
 			}
 		};
 
-		gridLit = new Boolean[8][8];
 
-		resetGrid();
 	}
-	
-	public void resetGrid(){
+
+	// resets the grid
+	// code: 0 off, 1 on
+	public void resetGrid(int code){
 		for(int i = 0; i < 8; i++)
 			for(int j = 0; j < 8; j++)
-				gridLit[i][j] = false;
-			
-		
+				gridLit[i][j] = (code == 1) ? true : false;
 	}
 
+	
 	// to be tided up
 	public void setLED(int xPos, int yPos, String state){
-		Log.i("OSC", "Inbound: /" + prefix + "/led " + xPos + " " + yPos + " " + state);
-		
+		Log.i("OSC", "Inbound: /" + prefix + "/led " + xPos + " " + yPos + " " + state + ", time: " + (System.currentTimeMillis()-start) );
+
+		// ignore input outside 8x8 grid 
 		if(xPos < 0 || xPos > 7 || yPos < 0 || yPos > 7) return;
-		
 		gridLit[xPos][yPos] = (state.equalsIgnoreCase("1")) ? true : false;
-		//MonomeView.this.postInvalidate();
 	}
 
-	// set OSC prefix and update listener filter
+	// set OSC prefix and update listener filters
 	public void setPrefix(String prefix){
 		this.prefix = prefix;
 		oscPortIn.addListener("/" + prefix + "/led", listener);
+		oscPortIn.addListener("/" + prefix + "/clear", listener);
 		oscPortIn.startListening();
 	}
 
@@ -123,7 +142,7 @@ public class MonomeView extends View{
 			oscPortOut = new OSCPortOut(InetAddress.getByName(hostIPAddress));   
 			Log.i("Connection Info", "Connected to: " + hostIPAddress);
 			// if the oscPort variable fails to be instantiated then sent the error message
-			
+
 		} catch (Exception e) {
 			Log.e("Connection Error", "Couldn't set address" + e);
 		}
@@ -155,7 +174,7 @@ public class MonomeView extends View{
 		// draw cells
 		for (int h = 0; h < 8; h++) {
 			for (int w = 0; w < 8; w++) {
-				
+
 				if(gridLit[w][h]){
 					cell.setColor(getResources().getColor(R.color.lit));
 					cell.setStyle(Style.FILL);
@@ -163,7 +182,7 @@ public class MonomeView extends View{
 					cell.setColor(getResources().getColor(R.color.button));
 					cell.setStyle(Style.STROKE);
 				}
-				
+
 				RectF bounds = new RectF(w * cellSize, h* cellSize, (w * cellSize) + (cellSize -2), (h * cellSize) + (cellSize -2));
 				canvas.drawRoundRect(bounds, 4, 4, cell);
 			}
@@ -173,7 +192,7 @@ public class MonomeView extends View{
 	/* BUG 
 	 * To fix:
 	 * Press down and drag and release on different square
-	 * Dont recieve up if released on different square
+	 * Don't receive up if released on different square
 	 * 
 	 */
 	@Override 
@@ -215,7 +234,7 @@ public class MonomeView extends View{
 		this.deviceIPAddress = deviceIPAddress;
 		Log.i("IP", deviceIPAddress);
 	}
-	
+
 	public void setHostIPAddress(String hostIPAddress) {
 		this.hostIPAddress = hostIPAddress;
 		Log.i("IP", hostIPAddress);
