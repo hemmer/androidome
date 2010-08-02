@@ -33,10 +33,11 @@ public class MonomeView extends View{
 	String prefix = " ";
 	String deviceIPAddress = " ";
 	String hostIPAddress = "192.168.1.164";
+	boolean sendTiltOSC = false;
 
 	Boolean[][] gridLit;
 
-	private long _moveDelay = 10;
+	private long _moveDelay = 20;
 
 	private RefreshHandler _redrawHandler = new RefreshHandler();
 
@@ -65,13 +66,14 @@ public class MonomeView extends View{
 
 		start = System.currentTimeMillis();
 		
+		// start animation thread
 		update();
 
 		// initialise grid to store
 		// LED status
 		gridLit = new Boolean[8][8];
 		// and clear it 
-		resetGrid(0);
+		resetGrid(false);
 		
 		// create listener/port objects
 		try {
@@ -83,7 +85,7 @@ public class MonomeView extends View{
 		listener = new OSCListener() {
 			public void acceptMessage(java.util.Date time, OSCMessage message) {
 				String address = message.getAddress().trim();
-				Object[] args = message.getArguments(); 
+				Object[] args = message.getArguments();
 				Log.i("Test2", address);
 
 				// if the incoming messages are addressed to us,
@@ -99,7 +101,11 @@ public class MonomeView extends View{
 					}
 					// check for message to clear the board
 					else if(address.equalsIgnoreCase("clear") && args.length == 1){
-						resetGrid(Integer.parseInt(args[0].toString()));
+						resetGrid(Integer.parseInt(args[0].toString()) == 1);
+					} // check for message to turn on tilt reporting
+					  // should be off by default
+					else if(address.equalsIgnoreCase("tiltmode") && args.length == 1){
+						setTiltMode( Integer.parseInt(args[0].toString()) == 1);
 					}
 				}
 
@@ -108,13 +114,18 @@ public class MonomeView extends View{
 
 
 	}
+	
+	// turn reporting of tilt messages on or off
+	public void setTiltMode(boolean sendTiltOSC){
+		this.sendTiltOSC = sendTiltOSC;
+	}
 
-	// resets the grid
-	// code: 0 off, 1 on
-	public void resetGrid(int code){
+	// resets the whole grid
+	// code: true on, false off
+	public void resetGrid(boolean gridOn){
 		for(int i = 0; i < 8; i++)
 			for(int j = 0; j < 8; j++)
-				gridLit[i][j] = (code == 1) ? true : false;
+				gridLit[i][j] = gridOn;
 	}
 
 	
@@ -132,6 +143,7 @@ public class MonomeView extends View{
 		this.prefix = prefix;
 		oscPortIn.addListener("/" + prefix + "/led", listener);
 		oscPortIn.addListener("/" + prefix + "/clear", listener);
+		oscPortIn.addListener("/" + prefix + "/tiltmode", listener);
 		oscPortIn.startListening();
 	}
 
