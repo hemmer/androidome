@@ -29,7 +29,7 @@ public class MonomeView extends View{
 
 	OSCListener listener;
 
-	int cellSize = 38;
+	int cellSize = 55;
 	String prefix = " ";
 	String deviceIPAddress = " ";
 	String hostIPAddress = "192.168.1.164";
@@ -141,10 +141,15 @@ public class MonomeView extends View{
 	// set OSC prefix and update listener filters
 	public void setPrefix(String prefix){
 		this.prefix = prefix;
+		Log.i("OSC", prefix);
+		//try{
 		oscPortIn.addListener("/" + prefix + "/led", listener);
 		oscPortIn.addListener("/" + prefix + "/clear", listener);
 		oscPortIn.addListener("/" + prefix + "/tiltmode", listener);
 		oscPortIn.startListening();
+//		}catch(NullPointerException e){
+//			Log.e("error", e.toString());
+//		}
 	}
 
 	// create a method for the addressChanged action
@@ -161,7 +166,7 @@ public class MonomeView extends View{
 
 		Object[] oscArgs = {deviceIPAddress};
 		OSCMessage oscMsgIP = new OSCMessage("/androidome/setup", oscArgs);
-		OSCMessage oscMsgPrefix = new OSCMessage("/system/prefix /" + prefix, null);
+		OSCMessage oscMsgPrefix = new OSCMessage("/sys/prefix /" + prefix, null);
 
 		try {
 			oscPortOut.send(oscMsgIP);

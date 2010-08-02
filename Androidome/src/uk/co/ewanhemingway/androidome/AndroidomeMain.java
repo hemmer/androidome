@@ -83,7 +83,6 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 		Button connectButton = (Button) findViewById(R.id.connect_button);
 		connectButton.setOnClickListener(this);
 
-
 		_monomeView = (MonomeView)findViewById(R.id.monome_grid);
 		_monomeView.setDeviceIPAddress(intToIp(wifiInfo.getIpAddress()));
 		_monomeView.setPrefix(prefixTextBox.getText().toString());
@@ -124,6 +123,7 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 		( (i >> 24 ) & 0xFF);
 	}
 
+	// handler for setup button
 	public void onClick(View v) {
 		switch (v.getId()) {
 		case R.id.connect_button:
@@ -131,4 +131,5 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 			break;
 		}
 	}
+	
 }
