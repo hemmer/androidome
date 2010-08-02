@@ -1,0 +1,1 @@
+TO RUN MAKE SURE AndroidomeRouter.maxpat is running, set your prefix within the app, set the host IP and click Connect.

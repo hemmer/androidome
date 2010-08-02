@@ -6,14 +6,14 @@
 
 	<uk.co.ewanhemingway.androidome.MonomeView
 		android:id="@+id/monome_grid" xmlns:android="http://schemas.android.com/apk/res/android"
-		android:layout_height="304px" android:layout_width="304px"
+		android:layout_height="440px" android:layout_width="440px"
 		android:background="@color/background"></uk.co.ewanhemingway.androidome.MonomeView>
 
 	<LinearLayout android:orientation="horizontal"
 		android:layout_height="wrap_content" android:layout_width="fill_parent">
 		<TextView android:id="@+id/plain" android:text="@string/prefix_label"
 			android:layout_width="wrap_content" android:layout_height="wrap_content" />
-		<EditText android:id="@+id/prefix_edittext" android:text="test"
+		<EditText android:id="@+id/prefix_edittext" android:text="mlr"
 			android:layout_width="wrap_content" android:layout_height="wrap_content" />
 	</LinearLayout>
 
