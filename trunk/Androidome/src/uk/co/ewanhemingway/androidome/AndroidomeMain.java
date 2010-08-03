@@ -2,10 +2,11 @@ package uk.co.ewanhemingway.androidome;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
-import android.text.Editable;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -17,6 +18,8 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 public class AndroidomeMain extends Activity implements OnClickListener{
+
+	public static final String PREFS_NAME = "AndroidomePrefsFile";
 
 	public Button buttonGrid[][], clearButton;
 	public boolean grid[][];
@@ -35,11 +38,14 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
 
-		WifiManager wifiManager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
-		WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+		// retrieve preferences
+		SharedPreferences mPrefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+		String lastHostIP = mPrefs.getString("lastHostIP", "192.164.1.1");
+		String lastPrefix = mPrefs.getString("lastPrefix", "mlr");
 
 		// textbox for setting monome prefix 
 		prefixTextBox = (EditText) findViewById(R.id.prefix_edittext);
+		prefixTextBox.setText(lastPrefix);
 		prefixTextBox.setOnKeyListener(new OnKeyListener() {
 			public boolean onKey(View v, int keyCode, KeyEvent event) {
 
@@ -61,6 +67,7 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 
 		// textbox for setting ip address of host
 		hostTextBox = (EditText) findViewById(R.id.host_edittext);
+		hostTextBox.setText(lastHostIP);
 		hostTextBox.setOnKeyListener(new OnKeyListener() {
 			public boolean onKey(View v, int keyCode, KeyEvent event) {
 
@@ -83,31 +90,62 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 		Button connectButton = (Button) findViewById(R.id.connect_button);
 		connectButton.setOnClickListener(this);
 
+		Button helpButton = (Button) findViewById(R.id.help_button);
+		helpButton.setOnClickListener(this);
+
 		_monomeView = (MonomeView)findViewById(R.id.monome_grid);
+		prepareMonomeGrid();
+	}
+	
+	// set up monome grid for action
+	private void prepareMonomeGrid(){
+		
+		// find IP address of phone
+		// TODO: check for wifi enabled
+		WifiManager wifiManager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
+		WifiInfo wifiInfo = wifiManager.getConnectionInfo();
 		_monomeView.setDeviceIPAddress(intToIp(wifiInfo.getIpAddress()));
+
+		// read host ip from textbox and inform _monomeView
+		_monomeView.setHostIPAddress(hostTextBox.getText().toString());
+		
+		// update prefix
 		_monomeView.setPrefix(prefixTextBox.getText().toString());
-		_monomeView.setupOSC();
+		
+		// let max know of any changes
+		_monomeView.pingMaxWithSetupData();
 	}
 
 	// sets the OSC prefix
 	private void setPrefix() {
-		Editable prefix = prefixTextBox.getText();
-		showError("Prefix set to: " + prefix.toString());
+		
+		// get monome prefix from EditText
+		String prefix = prefixTextBox.getText().toString();
+		// tell user/log
+		showToast("Prefix set to: " + prefix.toString());
 		Log.i("Androidome", "Prefix set to: " + prefix.toString());
+		
+		// update the monome grid object
 		_monomeView.setPrefix(prefix.toString());
 	}
 
 	// sets the host machine address
 	private void setHostIp() {
-		Editable host = hostTextBox.getText();
-		showError("Host set to: " + host.toString());
-		Log.i("Androidome", "Host set to: " + host.toString());
-		_monomeView.setHostIPAddress(host.toString());
-		_monomeView.setupOSC();
+		
+		// get host machine address from EditText
+		String host = hostTextBox.getText().toString();
+		// tell user/log
+		showToast("Host set to: " + host);
+		Log.i("Androidome", "Host set to: " + host);
+		
+		// update the monome grid object, 
+		// and check with Max
+		_monomeView.setHostIPAddress(host);
+		_monomeView.pingMaxWithSetupData();
 	}
 
-	// create a Toast to display info/errors
-	protected void showError(String anErrorMessage) {
+	// create a Toast to display info/errors etc
+	protected void showToast(String anErrorMessage) {
 		Context context = getApplicationContext();
 		int duration = Toast.LENGTH_SHORT;
 		Toast toast = Toast.makeText(context, anErrorMessage, duration);
@@ -123,13 +161,48 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 		( (i >> 24 ) & 0xFF);
 	}
 
-	// handler for setup button
+	// click handlers for setup/help buttons
 	public void onClick(View v) {
 		switch (v.getId()) {
 		case R.id.connect_button:
-			_monomeView.setupOSC();
+			_monomeView.pingMaxWithSetupData();
+			break;
+
+		case R.id.help_button:
+			Intent i = new Intent(this, HelpActivity.class);
+			startActivity(i);
 			break;
 		}
 	}
-	
+
+	// deal with cases when application looses focus
+	@Override
+	public void onPause(){
+		super.onPause();
+		// stop threads/listeners
+		_monomeView.pauseMonomeGrid();
+	}
+
+	// restart it all
+	@Override
+	public void onResume(){
+		super.onResume();
+		_monomeView.initialiseMonomeGrid();
+		prepareMonomeGrid();
+	}
+
+	// write prefs when app is stopped
+	@Override
+	protected void onStop(){
+		super.onStop();
+
+		// We need an Editor object to make preference changes.
+		SharedPreferences settings = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+		SharedPreferences.Editor editor = settings.edit();
+		editor.putString("lastHostIP", _monomeView.getHostIPAddress());
+		editor.putString("lastPrefix", _monomeView.getPrefix());
+
+		// make sure we commit the edits!
+		editor.commit();
+	}
 }

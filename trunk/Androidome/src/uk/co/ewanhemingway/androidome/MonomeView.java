@@ -29,7 +29,7 @@ public class MonomeView extends View{
 
 	OSCListener listener;
 
-	int cellSize = 55;
+	int cellSize = 56;
 	String prefix = " ";
 	String deviceIPAddress = " ";
 	String hostIPAddress = "192.168.1.164";
@@ -38,6 +38,10 @@ public class MonomeView extends View{
 	Boolean[][] gridLit;
 
 	private long _moveDelay = 20;
+
+	private int runMode = 0;
+    public static final int PAUSE = 0;
+    public static final int RUNNING = 1;
 
 	private RefreshHandler _redrawHandler = new RefreshHandler();
 
@@ -56,7 +60,7 @@ public class MonomeView extends View{
 	};
 
 	private void update() {
-		_redrawHandler.sleep(_moveDelay);
+		if(runMode == RUNNING) _redrawHandler.sleep(_moveDelay);
 	}
 
 	long start;
@@ -65,12 +69,15 @@ public class MonomeView extends View{
 		super(context, attrs);
 
 		start = System.currentTimeMillis();
-		
+		initialiseMonomeGrid();
+	}
+	
+	public void initialiseMonomeGrid(){
 		// start animation thread
+		runMode = RUNNING;
 		update();
-
-		// initialise grid to store
-		// LED status
+		
+		// initialise grid to store LED status
 		gridLit = new Boolean[8][8];
 		// and clear it 
 		resetGrid(false);
@@ -86,13 +93,12 @@ public class MonomeView extends View{
 			public void acceptMessage(java.util.Date time, OSCMessage message) {
 				String address = message.getAddress().trim();
 				Object[] args = message.getArguments();
-				Log.i("Test2", address);
 
 				// if the incoming messages are addressed to us,
 				// i.e incoming prefix matches the stored prefix 
 				if(address.substring(1, prefix.length()+1).equalsIgnoreCase(prefix)){
 					address = address.substring(prefix.length()+2);
-					Log.i("Test", address);
+					//Log.i("Test", address);
 
 					// most likely message is led calls 
 					// NOTE: must check that we have 3 arguments (x, y, on/off)
@@ -111,14 +117,14 @@ public class MonomeView extends View{
 
 			}
 		};
-
-
 	}
 	
 	// turn reporting of tilt messages on or off
 	public void setTiltMode(boolean sendTiltOSC){
 		this.sendTiltOSC = sendTiltOSC;
 	}
+	
+
 
 	// resets the whole grid
 	// code: true on, false off
@@ -131,7 +137,7 @@ public class MonomeView extends View{
 	
 	// to be tided up
 	public void setLED(int xPos, int yPos, String state){
-		Log.i("OSC", "Inbound: /" + prefix + "/led " + xPos + " " + yPos + " " + state + ", time: " + (System.currentTimeMillis()-start) );
+		Log.i("OSC", "Inbound: /" + prefix + "/led " + xPos + " " + yPos + " " + state);
 
 		// ignore input outside 8x8 grid 
 		if(xPos < 0 || xPos > 7 || yPos < 0 || yPos > 7) return;
@@ -141,19 +147,16 @@ public class MonomeView extends View{
 	// set OSC prefix and update listener filters
 	public void setPrefix(String prefix){
 		this.prefix = prefix;
-		Log.i("OSC", prefix);
-		//try{
+		Log.i("OSC", "Prefix set to: " + prefix);
 		oscPortIn.addListener("/" + prefix + "/led", listener);
 		oscPortIn.addListener("/" + prefix + "/clear", listener);
 		oscPortIn.addListener("/" + prefix + "/tiltmode", listener);
 		oscPortIn.startListening();
-//		}catch(NullPointerException e){
-//			Log.e("error", e.toString());
-//		}
+
 	}
 
 	// create a method for the addressChanged action
-	public void setupOSC() {
+	public void pingMaxWithSetupData() {
 		// the variable OSCPortOut tries to get an instance of OSCPortOut at the address
 		try {
 			oscPortOut = new OSCPortOut(InetAddress.getByName(hostIPAddress));   
@@ -176,6 +179,19 @@ public class MonomeView extends View{
 			Log.e("IOException", e.toString());
 		}
 
+	}
+	
+	// stop listeners/animation  when app looses focus
+	public void pauseMonomeGrid(){
+		
+		// close up OSC listeners when app not running
+		oscPortIn.stopListening();
+		oscPortIn.close();
+		oscPortOut.close();
+		listener = null;
+		
+		// pause the animation thread
+		runMode = PAUSE;
 	}
 
 	protected void onDraw(Canvas canvas) {
@@ -200,7 +216,7 @@ public class MonomeView extends View{
 					cell.setStyle(Style.STROKE);
 				}
 
-				RectF bounds = new RectF(w * cellSize, h* cellSize, (w * cellSize) + (cellSize -2), (h * cellSize) + (cellSize -2));
+				RectF bounds = new RectF(w * cellSize, h* cellSize, (w * cellSize) + (cellSize - 5), (h * cellSize) + (cellSize - 5));
 				canvas.drawRoundRect(bounds, 4, 4, cell);
 			}
 		}
@@ -233,7 +249,7 @@ public class MonomeView extends View{
 		return true; 
 	} 
 
-	// handler for button grid 
+	// click handler for button grid 
 	public void sendTouch(int posX, int posY, int actionCode) {
 
 		Object[] oscArgs = {new Integer(posX), new Integer(posY), new Integer(actionCode)};
@@ -255,6 +271,14 @@ public class MonomeView extends View{
 	public void setHostIPAddress(String hostIPAddress) {
 		this.hostIPAddress = hostIPAddress;
 		Log.i("IP", hostIPAddress);
+	}
+	
+	public String getHostIPAddress() {
+		return this.hostIPAddress;
+	}
+	
+	public String getPrefix(){
+		return this.prefix;
 	}
 
 }
