@@ -1,36 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	android:background="@color/background" android:layout_height="fill_parent"
-	android:layout_width="fill_parent" android:padding="10dip"
-	android:orientation="vertical">
+	android:layout_width="fill_parent" android:padding="10dip">
 
 	<uk.co.ewanhemingway.androidome.MonomeView
 		android:id="@+id/monome_grid" xmlns:android="http://schemas.android.com/apk/res/android"
-		android:layout_height="440px" android:layout_width="440px"
-		android:background="@color/background"></uk.co.ewanhemingway.androidome.MonomeView>
+		android:layout_height="448px" android:layout_width="448px"
+		android:background="@color/background" android:layout_alignParentTop="true"></uk.co.ewanhemingway.androidome.MonomeView>
 
-	<LinearLayout android:orientation="horizontal"
-		android:layout_height="wrap_content" android:layout_width="fill_parent">
-		<TextView android:id="@+id/plain" android:text="@string/prefix_label"
+	<RelativeLayout android:layout_height="wrap_content"
+		android:layout_width="fill_parent" android:layout_below="@+id/monome_grid">
+		<ImageView android:id="@+id/imagebutton" android:src="@drawable/logo"
 			android:layout_width="wrap_content" android:layout_height="wrap_content" />
-		<EditText android:id="@+id/prefix_edittext" android:text="mlr"
-			android:layout_width="wrap_content" android:layout_height="wrap_content" />
-	</LinearLayout>
+	</RelativeLayout>
 
-	<LinearLayout android:orientation="horizontal"
-		android:layout_height="wrap_content" android:layout_width="fill_parent">
-		<TextView android:id="@+id/host_label" android:text="@string/host_label"
-			android:layout_width="wrap_content" android:layout_height="wrap_content" />
-		<EditText android:id="@+id/host_edittext" android:text="@string/host_address"
-			android:layout_width="wrap_content" android:layout_height="wrap_content"
-			android:inputType="numberDecimal" />
+	<RelativeLayout android:orientation="horizontal"
+		android:layout_alignParentBottom="true" android:layout_height="wrap_content"
+		android:layout_width="fill_parent">
 
-	</LinearLayout>
-	
-	<Button android:id="@+id/connect_button" android:layout_width="wrap_content"
-		android:layout_height="wrap_content" android:text="@string/connect_button" />
-		
-	<ImageView android:id="@+id/imagebutton" android:gravity="right"
-		android:src="@drawable/logo" android:layout_width="wrap_content"
-		android:layout_height="wrap_content" />
-</LinearLayout>
+		<TableLayout android:id="@+id/input_table"
+			android:layout_height="wrap_content" android:layout_width="wrap_content">
+
+			<TableRow>
+				<TextView android:id="@+id/plain" android:text="@string/prefix_label"
+					android:layout_width="wrap_content" android:layout_height="wrap_content"
+					android:textColor="@color/label_colour" />
+				<EditText android:id="@+id/prefix_edittext"
+					android:layout_width="wrap_content" android:layout_height="wrap_content" />
+				<Button android:id="@+id/help_button" android:layout_width="wrap_content"
+					android:layout_height="wrap_content" android:text="@string/help_button" />
+			</TableRow>
+			<TableRow android:orientation="horizontal"
+				android:layout_height="wrap_content" android:layout_width="fill_parent">
+				<TextView android:id="@+id/host_label" android:text="@string/host_label"
+					android:layout_width="wrap_content" android:layout_height="wrap_content"
+					android:textColor="@color/label_colour" />
+				<EditText android:id="@+id/host_edittext"
+					android:layout_width="wrap_content" android:layout_height="wrap_content"
+					android:inputType="phone" />
+				<Button android:id="@+id/connect_button"
+					android:layout_width="wrap_content" android:layout_height="wrap_content"
+					android:text="@string/connect_button" />
+			</TableRow>
+
+		</TableLayout>
+
+
+	</RelativeLayout>
+</RelativeLayout>

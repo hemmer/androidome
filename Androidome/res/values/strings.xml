@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 	<string name="app_name">Androidome</string>
+	<string name="help_title">Androidome Help</string>
 	<string name="prefix_label">Prefix</string>
 	<string name="prefix_button">Set</string>
-	
 	<string name="host_label">Host</string>
-	<string name="host_address">192.168.1.164</string>
 	<string name="connect_button">Connect to Max</string>
+	<string name="help_button">Help</string>
+	<string name="help_text">First make sure AndroidomeRouter is running in Max/MSP. The host address displayed should be entered
+	in the textbox marked host. The prefix of the monome app you want to run should be entered in the prefix textbox. Then click Connect 
+	to Max and you should be up and running.</string>
 </resources>
