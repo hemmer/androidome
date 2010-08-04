@@ -41,7 +41,7 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 		// retrieve preferences
 		SharedPreferences mPrefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
 		String lastHostIP = mPrefs.getString("lastHostIP", "192.164.1.1");
-		String lastPrefix = mPrefs.getString("lastPrefix", "mlr");
+		String lastPrefix = mPrefs.getString("lastPrefix", "test");
 
 		// textbox for setting monome prefix 
 		prefixTextBox = (EditText) findViewById(R.id.prefix_edittext);
