@@ -112,6 +112,14 @@ public class MonomeView extends View{
 						setLED(Integer.parseInt(args[0].toString()), Integer.parseInt(args[1].toString()), args[2].toString());
 					}
 					// check for message to clear the board
+					else if(address.equalsIgnoreCase("led_col") && args.length == 2){
+						setLEDCol(Integer.parseInt(args[0].toString()), Integer.parseInt(args[1].toString()));
+					} 
+					// check for message to clear the board
+					else if(address.equalsIgnoreCase("led_row") && args.length == 2){
+						setLEDRow(Integer.parseInt(args[0].toString()), Integer.parseInt(args[1].toString()));
+					} 
+					// check for message to clear the board
 					else if(address.equalsIgnoreCase("clear") && args.length == 1){
 						resetGrid(Integer.parseInt(args[0].toString()) == 1);
 					} // check for message to turn on tilt reporting
@@ -122,6 +130,8 @@ public class MonomeView extends View{
 				}
 
 			}
+
+
 		};
 	}
 
@@ -130,7 +140,21 @@ public class MonomeView extends View{
 		this.sendTiltOSC = sendTiltOSC;
 	}
 
-
+	private void setLEDCol(int col, int value) {
+		int check = 1;
+		for(int i = 0; i < GRID_HEIGHT; i++){
+			gridLit[col][i] = ((value & check) != 0);
+			check = check << 1;  
+		}
+	}
+	
+	private void setLEDRow(int row, int value) {
+		int check = 1;
+		for(int i = 0; i < GRID_HEIGHT; i++){
+			gridLit[i][row] = ((value & check) != 0);
+			check = check << 1;  
+		}
+	}
 
 	// resets the whole grid
 	// code: true on, false off
@@ -155,6 +179,8 @@ public class MonomeView extends View{
 		this.prefix = prefix;
 		Log.i("OSC", "Prefix set to: " + prefix);
 		oscPortIn.addListener("/" + prefix + "/led", listener);
+		oscPortIn.addListener("/" + prefix + "/led_col", listener);
+		oscPortIn.addListener("/" + prefix + "/led_row", listener);
 		oscPortIn.addListener("/" + prefix + "/clear", listener);
 		oscPortIn.addListener("/" + prefix + "/tiltmode", listener);
 		oscPortIn.startListening();
@@ -228,12 +254,6 @@ public class MonomeView extends View{
 		}
 	}
 
-	/* BUG 
-	 * To fix:
-	 * Press down and drag and release on different square
-	 * Don't receive up if released on different square
-	 */
-
 	// check use floats maybe faster?
 	@Override 
 	public boolean onTouchEvent(MotionEvent ev) { 
@@ -249,10 +269,10 @@ public class MonomeView extends View{
 			// find which cell the initial touch took place in
 			int x = (int)ev.getX()/cellSize;
 			int y = (int)ev.getY()/cellSize;
-			
+
 			// exclude touches outside the grid
 			if(x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) return true;
-			
+
 			sendTouch(x, y, 1);
 			final int pointerIndex = (action & MotionEvent.ACTION_POINTER_ID_MASK) >> MotionEvent.ACTION_POINTER_ID_SHIFT;
 
@@ -272,10 +292,10 @@ public class MonomeView extends View{
 			// find which cell the initial touch took place in
 			int x = (int)ev.getX(pointerIndex)/cellSize;
 			int y = (int)ev.getY(pointerIndex)/cellSize;
-			
+
 			// exclude touches outside the grid
 			if(x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) return true;
-			
+
 			sendTouch(x, y, 1);
 
 			TouchStream subsequent = new TouchStream(x, y, pointerIndex);
@@ -299,12 +319,12 @@ public class MonomeView extends View{
 
 				// if dragged outside the grid
 				if(x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT){
-					
+
 					// send the last stored position
 					sendTouch(temp.getX(), temp.getY(), 0);
 					return true;
 				}
-				
+
 				// if we leave the previous square
 				if(x != temp.getX() || y != temp.getY()){
 					//send leave message
@@ -413,7 +433,8 @@ public class MonomeView extends View{
 		Log.d("HAI", sb.toString());
 	}
 
-	public void l(String i){
-		Log.i("Test", i);
+	public void l(Object i){
+		Log.i("Test", i.toString());
 	}
+
 }
