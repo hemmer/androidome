@@ -3,7 +3,9 @@ package com.illposed.osc.utility;
 import java.math.BigInteger;
 import java.util.Date;
 
-import com.illposed.osc.*;
+import com.illposed.osc.OSCBundle;
+import com.illposed.osc.OSCMessage;
+import com.illposed.osc.OSCPacket;
 
 /**
  * Utility class to convert a byte array conforming to the OSC byte stream format
@@ -134,7 +136,8 @@ public class OSCByteArrayToJavaConverter {
 		char[] typesChars = new char[typesLen];
 		for (int i = 0; i < typesLen; i++) {
 			typesChars[i] = (char) bytes[streamPosition++];
-		}				
+		}
+
 		return typesChars;
 	}
 
