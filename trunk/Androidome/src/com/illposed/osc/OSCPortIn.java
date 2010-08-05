@@ -3,8 +3,6 @@ package com.illposed.osc;
 import java.net.*;
 import java.io.IOException;
 
-import android.util.Log;
-
 import com.illposed.osc.utility.OSCByteArrayToJavaConverter;
 import com.illposed.osc.utility.OSCPacketDispatcher;
 
@@ -59,9 +57,9 @@ public class OSCPortIn extends OSCPort implements Runnable {
 	 */
 	public void run() {
 			// buffers were 1500 bytes in size, but this was
-			// increased to 1536, as this is a common MTU
-		byte[] buffer = new byte[1536];
-		DatagramPacket packet = new DatagramPacket(buffer, 1536);
+			// increased to 4096, as this is a common MTU
+		byte[] buffer = new byte[4096];
+		DatagramPacket packet = new DatagramPacket(buffer, 4096);
 		while (isListening) {
 			try {
 				socket.receive(packet);

@@ -53,7 +53,7 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 				if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
 
 					// update the prefix
-					setPrefix();
+					prefixChanged();
 					// and hide the keyboard for now
 					InputMethodManager inputMM = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
 					inputMM.hideSoftInputFromWindow(prefixTextBox.getWindowToken(), 0);
@@ -75,7 +75,7 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 				if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
 
 					// update the prefix
-					setHostIp();
+					hostIpChange();
 					// and hide the keyboard for now
 					InputMethodManager inputMM = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
 					inputMM.hideSoftInputFromWindow(prefixTextBox.getWindowToken(), 0);
@@ -96,48 +96,51 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 		_monomeView = (MonomeView)findViewById(R.id.monome_grid);
 		prepareMonomeGrid();
 	}
-	
+
 	// set up monome grid for action
 	private void prepareMonomeGrid(){
-		
-		// find IP address of phone
-		// TODO: check for wifi enabled
-		WifiManager wifiManager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
-		WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-		_monomeView.setDeviceIPAddress(intToIp(wifiInfo.getIpAddress()));
 
+		// find IP address of phone
+		WifiManager wifiManager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
+		if(wifiManager.isWifiEnabled()){
+			WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+			_monomeView.setDeviceIPAddress(intToIp(wifiInfo.getIpAddress()));
+		}else{
+			showToast("Please enable Wifi to continue");
+			_monomeView.setDeviceIPAddress("127.0.0.1");
+		}
 		// read host ip from textbox and inform _monomeView
 		_monomeView.setHostIPAddress(hostTextBox.getText().toString());
-		
+
 		// update prefix
 		_monomeView.setPrefix(prefixTextBox.getText().toString());
-		
+
 		// let max know of any changes
 		_monomeView.pingMaxWithSetupData();
 	}
 
 	// sets the OSC prefix
-	private void setPrefix() {
-		
+	private void prefixChanged() {
+
 		// get monome prefix from EditText
 		String prefix = prefixTextBox.getText().toString();
 		// tell user/log
 		showToast("Prefix set to: " + prefix.toString());
 		Log.i("Androidome", "Prefix set to: " + prefix.toString());
-		
+
 		// update the monome grid object
 		_monomeView.setPrefix(prefix.toString());
 	}
 
 	// sets the host machine address
-	private void setHostIp() {
-		
+	private void hostIpChange() {
+
 		// get host machine address from EditText
 		String host = hostTextBox.getText().toString();
 		// tell user/log
 		showToast("Host set to: " + host);
 		Log.i("Androidome", "Host set to: " + host);
-		
+
 		// update the monome grid object, 
 		// and check with Max
 		_monomeView.setHostIPAddress(host);
@@ -148,8 +151,7 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 	protected void showToast(String anErrorMessage) {
 		Context context = getApplicationContext();
 		int duration = Toast.LENGTH_SHORT;
-		Toast toast = Toast.makeText(context, anErrorMessage, duration);
-		toast.show();
+		Toast.makeText(context, anErrorMessage, duration).show();
 	}
 
 	// adapted from http://teneo.wordpress.com/2008/12/23/java-ip-address-to-integer-and-back/  
@@ -165,6 +167,7 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 	public void onClick(View v) {
 		switch (v.getId()) {
 		case R.id.connect_button:
+			prepareMonomeGrid();
 			_monomeView.pingMaxWithSetupData();
 			break;
 

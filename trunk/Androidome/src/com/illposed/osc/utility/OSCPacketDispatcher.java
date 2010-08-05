@@ -73,6 +73,13 @@ public class OSCPacketDispatcher {
 			// if (key.matches(message.getAddress())) {
 			if (key.equals(message.getAddress())) {
 				OSCListener listener = (OSCListener) addressToClassTable.get(key);
+				
+				String address = message.getAddress().trim();
+				Object[] args = message.getArguments();
+				String i = address;
+				for(int j = 0; j < args.length; j++) i += " " + args[j].toString();
+				Log.i("MessagesTest", i);
+
 				listener.acceptMessage(time, message);
 			}
 		}

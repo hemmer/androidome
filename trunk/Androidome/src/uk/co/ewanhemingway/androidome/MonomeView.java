@@ -39,7 +39,7 @@ public class MonomeView extends View{
 
 	Boolean[][] gridLit;
 
-	private long _moveDelay = 20;
+	private long _moveDelay = 50;
 
 	private int runMode = 0;
 	public static final int PAUSE = 0;
@@ -74,7 +74,6 @@ public class MonomeView extends View{
 	public MonomeView(Context context, AttributeSet attrs) {
 		super(context, attrs);
 
-		start = System.currentTimeMillis();
 		initialiseMonomeGrid();
 	}
 
@@ -100,16 +99,32 @@ public class MonomeView extends View{
 				String address = message.getAddress().trim();
 				Object[] args = message.getArguments();
 
+				//				String i = address;
+				//				for(int j = 0; j < args.length; j++) i += " " + args[j].toString();
+				//				Log.i("MessagesTest", i);
+
 				// if the incoming messages are addressed to us,
 				// i.e incoming prefix matches the stored prefix 
 				if(address.substring(1, prefix.length()+1).equalsIgnoreCase(prefix)){
 					address = address.substring(prefix.length()+2);
-					Log.i("Test", address + " " + args.length);
 
 					// most likely message is led calls 
 					// NOTE: must check that we have 3 arguments (x, y, on/off)
 					if(address.equalsIgnoreCase("led") && args.length == 3){
-						setLED(Integer.parseInt(args[0].toString()), Integer.parseInt(args[1].toString()), args[2].toString());
+						l(args[0] + ", " + args[1] + ", " + args[2] + " " + args.length);
+						try{
+
+
+							int arg1 = Integer.parseInt(args[0].toString());
+							int arg2 = Integer.parseInt(args[1].toString());
+							int arg3 = Integer.parseInt(args[2].toString());
+
+							setLED(arg1, arg2, arg3);
+
+						}catch (NullPointerException e) {
+							e.printStackTrace();
+							l(message.getAddress().trim() + " ");
+						}
 					}
 					// check for message to clear the board
 					else if(address.equalsIgnoreCase("led_col") && args.length == 2){
@@ -128,10 +143,7 @@ public class MonomeView extends View{
 						setTiltMode( Integer.parseInt(args[0].toString()) == 1);
 					}
 				}
-
 			}
-
-
 		};
 	}
 
@@ -143,11 +155,17 @@ public class MonomeView extends View{
 	private void setLEDCol(int col, int value) {
 		int check = 1;
 		for(int i = 0; i < GRID_HEIGHT; i++){
-			gridLit[col][i] = ((value & check) != 0);
+			try{
+				gridLit[col][i] = ((value & check) != 0);
+			}catch(ArrayIndexOutOfBoundsException e){
+				l(col + " " + i);
+				e.printStackTrace();
+
+			}
 			check = check << 1;  
 		}
 	}
-	
+
 	private void setLEDRow(int row, int value) {
 		int check = 1;
 		for(int i = 0; i < GRID_HEIGHT; i++){
@@ -164,14 +182,13 @@ public class MonomeView extends View{
 				gridLit[i][j] = gridOn;
 	}
 
-
 	// to be tided up
-	public void setLED(int xPos, int yPos, String state){
+	public void setLED(int xPos, int yPos, int state){
 		Log.i("OSC", "Inbound: /" + prefix + "/led " + xPos + " " + yPos + " " + state);
 
 		// ignore input outside 8x8 grid 
 		if(xPos < 0 || xPos >= GRID_WIDTH || yPos < 0 || yPos >= GRID_HEIGHT) return;
-		gridLit[xPos][yPos] = (state.equalsIgnoreCase("1")) ? true : false;
+		gridLit[xPos][yPos] = (state == 1) ? true : false;
 	}
 
 	// set OSC prefix and update listener filters
@@ -183,6 +200,7 @@ public class MonomeView extends View{
 		oscPortIn.addListener("/" + prefix + "/led_row", listener);
 		oscPortIn.addListener("/" + prefix + "/clear", listener);
 		oscPortIn.addListener("/" + prefix + "/tiltmode", listener);
+		oscPortIn.addListener("/androidome/sucess", listener);
 		oscPortIn.startListening();
 
 	}
@@ -257,8 +275,6 @@ public class MonomeView extends View{
 	// check use floats maybe faster?
 	@Override 
 	public boolean onTouchEvent(MotionEvent ev) { 
-
-		dumpEvent(ev);
 
 		final int action = ev.getAction();
 
@@ -375,14 +391,14 @@ public class MonomeView extends View{
 	public void sendTouch(int posX, int posY, int actionCode) {
 		String test =  posX + " " + posY + " ";
 		test += (actionCode == 0) ? "Up" : "Down";
-		Log.i("KeyPress", test);
+		//Log.i("KeyPress", test);
 
 		Object[] oscArgs = {new Integer(posX), new Integer(posY), new Integer(actionCode)};
 		OSCMessage oscMsg = new OSCMessage("/" + prefix + "/press", oscArgs);
 
 		try {
 			oscPortOut.send(oscMsg);
-			Log.i("OSC", "Outbound: " + oscMsg.getAddress() + " " + oscArgs[0] + " " + oscArgs[1] + " " + oscArgs[2]);
+			//Log.i("OSC", "Outbound: " + oscMsg.getAddress() + " " + oscArgs[0] + " " + oscArgs[1] + " " + oscArgs[2]);
 		} catch (IOException e) {
 			Log.e("IOException", e.toString());
 		}
@@ -404,33 +420,6 @@ public class MonomeView extends View{
 
 	public String getPrefix(){
 		return this.prefix;
-	}
-
-	/** Show an event in the LogCat view, for debugging */
-	private void dumpEvent(MotionEvent event) {
-		String names[] = { "DOWN" , "UP" , "MOVE" , "CANCEL" , "OUTSIDE" ,
-				"POINTER_DOWN" , "POINTER_UP" , "7?" , "8?" , "9?" };
-		StringBuilder sb = new StringBuilder();
-		int action = event.getAction();
-		int actionCode = action & MotionEvent.ACTION_MASK;
-		sb.append("event ACTION_" ).append(names[actionCode]);
-		if (actionCode == MotionEvent.ACTION_POINTER_DOWN
-				|| actionCode == MotionEvent.ACTION_POINTER_UP) {
-			sb.append("(pid " ).append(
-					action >> MotionEvent.ACTION_POINTER_ID_SHIFT);
-			sb.append(")" );
-		}
-		sb.append("[" );
-		for (int i = 0; i < event.getPointerCount(); i++) {
-			sb.append("#" ).append(i);
-			sb.append("(pid " ).append(event.getPointerId(i));
-			sb.append(")=" ).append((int) event.getX(i));
-			sb.append("," ).append((int) event.getY(i));
-			if (i + 1 < event.getPointerCount())
-				sb.append(";" );
-		}
-		sb.append("]" );
-		Log.d("HAI", sb.toString());
 	}
 
 	public void l(Object i){
