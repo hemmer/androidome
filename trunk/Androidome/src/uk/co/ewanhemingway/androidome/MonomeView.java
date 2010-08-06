@@ -196,7 +196,7 @@ public class MonomeView extends View{
 		this.prefix = prefix;
 		Log.i("OSC", "Prefix set to: " + prefix);
 		oscPortIn.addListener("/" + prefix + "/led", listener);
-		oscPortIn.addListener("/" + prefix + "/led_col", listener);
+		//oscPortIn.addListener("/" + prefix + "/led_col", listener);
 		oscPortIn.addListener("/" + prefix + "/led_row", listener);
 		oscPortIn.addListener("/" + prefix + "/clear", listener);
 		oscPortIn.addListener("/" + prefix + "/tiltmode", listener);
@@ -386,12 +386,11 @@ public class MonomeView extends View{
 		return true; 
 	} 
 
-	// click handler for button grid 
+	// click handler for button grid
 	// 1 down, 0 up
 	public void sendTouch(int posX, int posY, int actionCode) {
 		String test =  posX + " " + posY + " ";
 		test += (actionCode == 0) ? "Up" : "Down";
-		//Log.i("KeyPress", test);
 
 		Object[] oscArgs = {new Integer(posX), new Integer(posY), new Integer(actionCode)};
 		OSCMessage oscMsg = new OSCMessage("/" + prefix + "/press", oscArgs);

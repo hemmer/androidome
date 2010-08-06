@@ -1,7 +1,6 @@
 package com.illposed.osc;
 
-import java.net.*;
-import java.io.IOException;
+import java.net.DatagramSocket;
 
 /**
  * OSCPort is an abstract superclass. To send OSC messages, use @see OSCPortOut. 
@@ -24,14 +23,14 @@ public abstract class OSCPort {
 	 * The port that the SuperCollider <b>synth</b> engine ususally listens to &mdash; 57110.
 	 */
 	public static int defaultSCOSCPort() {
-		return 8000;
+		return 8001;
 	}
 	
 	/**
 	 * The port that the SuperCollider <b>language</b> engine ususally listens to &mdash; 57120.
 	 */
 	public static int defaultSCLangOSCPort() {
-		return 8000;
+		return 8001;
 	}
 	
 	/**
