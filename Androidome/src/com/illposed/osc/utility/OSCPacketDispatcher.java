@@ -77,7 +77,7 @@ public class OSCPacketDispatcher {
 				String address = message.getAddress().trim();
 				Object[] args = message.getArguments();
 				String i = address;
-				for(int j = 0; j < args.length; j++) i += " " + args[j].toString();
+				for(int j = 0; j < args.length; j++) i += " " + args[j];
 				Log.i("MessagesTest", i);
 
 				listener.acceptMessage(time, message);

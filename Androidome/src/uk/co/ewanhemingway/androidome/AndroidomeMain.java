@@ -100,15 +100,27 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 	// set up monome grid for action
 	private void prepareMonomeGrid(){
 
+		// set the default dummy address
+		// this shouldn't be used
+		_monomeView.setDeviceIPAddress("127.0.0.1");
+		
 		// find IP address of phone
 		WifiManager wifiManager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
+		
+		// make sure wi-fi is enabled
 		if(wifiManager.isWifiEnabled()){
 			WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-			_monomeView.setDeviceIPAddress(intToIp(wifiInfo.getIpAddress()));
+			
+			// and that we are connected
+			if(wifiInfo.getNetworkId() == -1){
+				showToast("Please make sure you are connected to the same network as the host");
+			}else{
+				_monomeView.setDeviceIPAddress(intToIp(wifiInfo.getIpAddress()));
+			}
 		}else{
 			showToast("Please enable Wifi to continue");
-			_monomeView.setDeviceIPAddress("127.0.0.1");
 		}
+		
 		// read host ip from textbox and inform _monomeView
 		_monomeView.setHostIPAddress(hostTextBox.getText().toString());
 
