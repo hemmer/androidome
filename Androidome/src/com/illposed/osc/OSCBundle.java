@@ -3,10 +3,9 @@ package com.illposed.osc;
 import java.math.BigInteger;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.GregorianCalendar;
 import java.util.Vector;
 
-import com.illposed.osc.utility.*;
+import com.illposed.osc.utility.OSCJavaToByteArrayConverter;
 
 /**
  * A bundle represents a collection of osc packets (either messages or other bundles) and

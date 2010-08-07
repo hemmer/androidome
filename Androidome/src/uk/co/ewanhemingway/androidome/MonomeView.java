@@ -81,7 +81,7 @@ public class MonomeView extends View{
 		// start animation thread
 		runMode = RUNNING;
 		update();
-
+		
 		// initialise grid to store LED status
 		gridLit = new Boolean[8][8];
 		// and clear it 
@@ -397,7 +397,7 @@ public class MonomeView extends View{
 
 		try {
 			oscPortOut.send(oscMsg);
-			//Log.i("OSC", "Outbound: " + oscMsg.getAddress() + " " + oscArgs[0] + " " + oscArgs[1] + " " + oscArgs[2]);
+			Log.i("OSC", "Outbound: " + oscMsg.getAddress() + " " + oscArgs[0] + " " + oscArgs[1] + " " + oscArgs[2]);
 		} catch (IOException e) {
 			Log.e("IOException", e.toString());
 		}
@@ -425,4 +425,8 @@ public class MonomeView extends View{
 		Log.i("Test", i.toString());
 	}
 
+	@Override
+	public void onWindowFocusChanged (boolean hasFocus){
+		cellSize = this.getWidth()/GRID_WIDTH;
+	}	
 }
