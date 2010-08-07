@@ -5,8 +5,9 @@
 
 	<uk.co.ewanhemingway.androidome.MonomeView
 		android:id="@+id/monome_grid" xmlns:android="http://schemas.android.com/apk/res/android"
-		android:layout_height="448px" android:layout_width="448px"
-		android:background="@color/background" android:layout_alignParentTop="true"></uk.co.ewanhemingway.androidome.MonomeView>
+		android:layout_height="fill_parent" android:layout_width="fill_parent"
+		android:layout_weight="1" android:background="@color/background"
+		android:layout_alignParentTop="true"></uk.co.ewanhemingway.androidome.MonomeView>
 
 	<RelativeLayout android:layout_height="wrap_content"
 		android:layout_width="fill_parent" android:layout_below="@+id/monome_grid">
