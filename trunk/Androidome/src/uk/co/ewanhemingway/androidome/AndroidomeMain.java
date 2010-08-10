@@ -39,7 +39,7 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 
 		// retrieve preferences
 		SharedPreferences mPrefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-		String lastHostIP = mPrefs.getString("lastHostIP", "192.164.1.1");
+		String lastHostIP = mPrefs.getString("lastHostIP", "192.168.1.1");
 		String lastPrefix = mPrefs.getString("lastPrefix", "test");
 
 		// textbox for setting monome prefix 
@@ -201,11 +201,10 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 	@Override
 	public void onResume(){
 		super.onResume();
-		_monomeView.initialiseMonomeGrid();
 		prepareMonomeGrid();
 	}
 
-	// write prefs when app is stopped
+	// write prefs when app is stopped 
 	@Override
 	protected void onStop(){
 		super.onStop();
