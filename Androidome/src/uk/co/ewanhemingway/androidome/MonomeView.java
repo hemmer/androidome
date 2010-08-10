@@ -196,8 +196,9 @@ public class MonomeView extends View{
 		this.prefix = prefix;
 		Log.i("OSC", "Prefix set to: " + prefix);
 		oscPortIn.addListener("/" + prefix + "/led", listener);
+		// TODO Fix
 		//oscPortIn.addListener("/" + prefix + "/led_col", listener);
-		oscPortIn.addListener("/" + prefix + "/led_row", listener);
+		//oscPortIn.addListener("/" + prefix + "/led_row", listener);
 		oscPortIn.addListener("/" + prefix + "/clear", listener);
 		oscPortIn.addListener("/" + prefix + "/tiltmode", listener);
 		oscPortIn.addListener("/androidome/sucess", listener);
@@ -210,7 +211,7 @@ public class MonomeView extends View{
 		// the variable OSCPortOut tries to get an instance of OSCPortOut at the address
 		try {
 			oscPortOut = new OSCPortOut(InetAddress.getByName(hostIPAddress));   
-			Log.i("Connection Info", "Connected to: " + hostIPAddress);
+			//Log.i("Connection Info", "Connected to: " + hostIPAddress);
 			// if the oscPort variable fails to be instantiated then sent the error message
 
 		} catch (Exception e) {
@@ -224,7 +225,7 @@ public class MonomeView extends View{
 		try {
 			oscPortOut.send(oscMsgIP);
 			oscPortOut.send(oscMsgPrefix);
-			Log.i("OSC", "Outbound: " + oscMsgIP.getAddress() + " " + oscArgs[0]);
+			//Log.i("OSC", "Outbound: " + oscMsgIP.getAddress() + " " + oscArgs[0]);
 		} catch (IOException e) {
 			Log.e("IOException", e.toString());
 		}
@@ -397,7 +398,7 @@ public class MonomeView extends View{
 
 		try {
 			oscPortOut.send(oscMsg);
-			Log.i("OSC", "Outbound: " + oscMsg.getAddress() + " " + oscArgs[0] + " " + oscArgs[1] + " " + oscArgs[2]);
+			//Log.i("OSC", "Outbound: " + oscMsg.getAddress() + " " + oscArgs[0] + " " + oscArgs[1] + " " + oscArgs[2]);
 		} catch (IOException e) {
 			Log.e("IOException", e.toString());
 		}
@@ -405,12 +406,12 @@ public class MonomeView extends View{
 
 	public void setDeviceIPAddress(String deviceIPAddress) {
 		this.deviceIPAddress = deviceIPAddress;
-		Log.i("IP", deviceIPAddress);
+		//Log.i("IP", deviceIPAddress);
 	}
 
 	public void setHostIPAddress(String hostIPAddress) {
 		this.hostIPAddress = hostIPAddress;
-		Log.i("IP", hostIPAddress);
+		//Log.i("IP", hostIPAddress);
 	}
 
 	public String getHostIPAddress() {
@@ -422,7 +423,7 @@ public class MonomeView extends View{
 	}
 
 	public void l(Object i){
-		Log.i("Test", i.toString());
+		//Log.i("Test", i.toString());
 	}
 
 	@Override
