@@ -7,7 +7,6 @@ import android.content.SharedPreferences;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -138,7 +137,7 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 		String prefix = prefixTextBox.getText().toString();
 		// tell user/log
 		showToast("Prefix set to: " + prefix.toString());
-		Log.i("Androidome", "Prefix set to: " + prefix.toString());
+		//Log.i("Androidome", "Prefix set to: " + prefix.toString());
 
 		// update the monome grid object
 		_monomeView.setPrefix(prefix.toString());
@@ -151,7 +150,7 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 		String host = hostTextBox.getText().toString();
 		// tell user/log
 		showToast("Host set to: " + host);
-		Log.i("Androidome", "Host set to: " + host);
+		//Log.i("Androidome", "Host set to: " + host);
 
 		// update the monome grid object, 
 		// and check with Max
