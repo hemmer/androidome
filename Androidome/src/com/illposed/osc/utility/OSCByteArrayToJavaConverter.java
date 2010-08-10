@@ -2,9 +2,8 @@ package com.illposed.osc.utility;
 
 import java.math.BigInteger;
 import java.util.Date;
-
 import com.illposed.osc.OSCBundle;
-import com.illposed.osc.OSCMessage;
+import com.illposed.osc.OSCMessageOut;
 import com.illposed.osc.OSCPacket;
 
 /**
@@ -82,8 +81,8 @@ public class OSCByteArrayToJavaConverter {
 	 * Convert the byte array a simple message. Assumes that the byte array is a message.
 	 * @return a message containing the data specified in the byte stream
 	 */
-	private OSCMessage convertMessage() {
-		OSCMessage message = new OSCMessage();
+	private OSCMessageOut convertMessage() {
+		OSCMessageOut message = new OSCMessageOut();
 		message.setAddress(readString());
 		char[] types = readTypes();
 		if (null == types) {

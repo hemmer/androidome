@@ -1,11 +1,10 @@
 package com.illposed.osc.utility;
 
-import java.io.IOException;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Enumeration;
 import java.util.Vector;
-import java.nio.*;
 
 /**
  * OSCJavaToByteArrayConverter is a helper class that translates

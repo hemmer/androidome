@@ -2,7 +2,9 @@ package uk.co.ewanhemingway.androidome;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.SocketException;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.channels.DatagramChannel;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -18,18 +20,20 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
-import com.illposed.osc.OSCListener;
-import com.illposed.osc.OSCMessage;
-import com.illposed.osc.OSCPortIn;
 import com.illposed.osc.OSCPortOut;
+import com.illposed.osc.OSCMessageOut;
 
+import de.sciss.net.OSCListener;
+import de.sciss.net.OSCMessage;
+import de.sciss.net.OSCReceiver;
 
 public class MonomeView extends View{
 
+	// OSC objects
+	private OSCReceiver rcv;
 	private OSCPortOut oscPortOut;
-	private OSCPortIn oscPortIn;
-
-	OSCListener listener;
+	DatagramChannel dch;
+	SocketAddress outgoingAddr;
 
 	int cellSize = 56;
 	String prefix = " ";
@@ -81,70 +85,79 @@ public class MonomeView extends View{
 		// start animation thread
 		runMode = RUNNING;
 		update();
-		
+
 		// initialise grid to store LED status
 		gridLit = new Boolean[8][8];
 		// and clear it 
 		resetGrid(false);
 
-		// create listener/port objects
+		rcv = null;
+		dch = null;
+
 		try {
-			oscPortIn = new OSCPortIn(8080);
-		} catch (SocketException e) {
-			Log.e("SocketException", e.toString());
+			final SocketAddress incomingPort = new InetSocketAddress(8080);
+
+			dch = DatagramChannel.open();
+			dch.socket().bind(incomingPort);    // assigns a local socket address to the listener
+			rcv = OSCReceiver.newUsing(dch);
+
+			rcv.addOSCListener( new OSCListener() {
+				public void messageReceived( OSCMessage message, SocketAddress sender, long time ){
+
+					String address = message.getName().trim();
+					int numArgs = message.getArgCount();
+
+					// if the incoming messages are addressed to us,
+					// i.e incoming prefix matches the stored prefix 
+					if(address.substring(1, prefix.length()+1).equalsIgnoreCase(prefix)){
+						address = address.substring(prefix.length()+2);
+
+						// most likely message is led calls 
+						// NOTE: must check that we have 3 arguments (x, y, on/off)
+						if(address.equalsIgnoreCase("led") && numArgs == 3){
+
+							int xPos = ((Number) message.getArg( 0 )).intValue();
+							int yPos = ((Number) message.getArg( 1 )).intValue();
+							int value = ((Number) message.getArg( 2 )).intValue();
+
+							setLED(xPos, yPos, value);
+						}
+						// check for message to light up a column
+						else if(address.equalsIgnoreCase("led_col") && numArgs == 2){
+
+							int col = ((Number) message.getArg( 0 )).intValue();
+							int value = ((Number) message.getArg( 1 )).intValue();
+
+							setLEDCol(col, value);
+						} 
+						// check for message to light up a row
+						else if(address.equalsIgnoreCase("led_row") && numArgs == 2){
+							int row = ((Number) message.getArg( 0 )).intValue();
+							int value = ((Number) message.getArg( 1 )).intValue();
+
+							setLEDRow(row, value);
+						} 
+						// check for message to clear the board
+						else if(address.equalsIgnoreCase("clear") && numArgs == 1){
+
+							boolean flag = message.getArg(0).toString().equalsIgnoreCase("1");
+							resetGrid(flag);
+						} // check for message to turn on tilt reporting
+						// should be off by default
+						//						else if(address.equalsIgnoreCase("tiltmode") && numArgs == 1){
+						//							setTiltMode( Integer.parseInt(args[0].toString()) == 1);
+						//						}
+					}
+
+				}
+			});
+			rcv.startListening();
+
+		}
+		catch( IOException e2 ) {
+			e2.printStackTrace();
 		}
 
-		listener = new OSCListener() {
-			public void acceptMessage(java.util.Date time, OSCMessage message) {
-				String address = message.getAddress().trim();
-				Object[] args = message.getArguments();
-
-				//				String i = address;
-				//				for(int j = 0; j < args.length; j++) i += " " + args[j].toString();
-				//				Log.i("MessagesTest", i);
-
-				// if the incoming messages are addressed to us,
-				// i.e incoming prefix matches the stored prefix 
-				if(address.substring(1, prefix.length()+1).equalsIgnoreCase(prefix)){
-					address = address.substring(prefix.length()+2);
-
-					// most likely message is led calls 
-					// NOTE: must check that we have 3 arguments (x, y, on/off)
-					if(address.equalsIgnoreCase("led") && args.length == 3){
-						l(args[0] + ", " + args[1] + ", " + args[2] + " " + args.length);
-						try{
-
-
-							int arg1 = Integer.parseInt(args[0].toString());
-							int arg2 = Integer.parseInt(args[1].toString());
-							int arg3 = Integer.parseInt(args[2].toString());
-
-							setLED(arg1, arg2, arg3);
-
-						}catch (NullPointerException e) {
-							e.printStackTrace();
-							l(message.getAddress().trim() + " ");
-						}
-					}
-					// check for message to clear the board
-					else if(address.equalsIgnoreCase("led_col") && args.length == 2){
-						setLEDCol(Integer.parseInt(args[0].toString()), Integer.parseInt(args[1].toString()));
-					} 
-					// check for message to clear the board
-					else if(address.equalsIgnoreCase("led_row") && args.length == 2){
-						setLEDRow(Integer.parseInt(args[0].toString()), Integer.parseInt(args[1].toString()));
-					} 
-					// check for message to clear the board
-					else if(address.equalsIgnoreCase("clear") && args.length == 1){
-						resetGrid(Integer.parseInt(args[0].toString()) == 1);
-					} // check for message to turn on tilt reporting
-					// should be off by default
-					else if(address.equalsIgnoreCase("tiltmode") && args.length == 1){
-						setTiltMode( Integer.parseInt(args[0].toString()) == 1);
-					}
-				}
-			}
-		};
 	}
 
 	// turn reporting of tilt messages on or off
@@ -184,7 +197,6 @@ public class MonomeView extends View{
 
 	// to be tided up
 	public void setLED(int xPos, int yPos, int state){
-		Log.i("OSC", "Inbound: /" + prefix + "/led " + xPos + " " + yPos + " " + state);
 
 		// ignore input outside 8x8 grid 
 		if(xPos < 0 || xPos >= GRID_WIDTH || yPos < 0 || yPos >= GRID_HEIGHT) return;
@@ -194,16 +206,6 @@ public class MonomeView extends View{
 	// set OSC prefix and update listener filters
 	public void setPrefix(String prefix){
 		this.prefix = prefix;
-		Log.i("OSC", "Prefix set to: " + prefix);
-		oscPortIn.addListener("/" + prefix + "/led", listener);
-		// TODO Fix
-		//oscPortIn.addListener("/" + prefix + "/led_col", listener);
-		//oscPortIn.addListener("/" + prefix + "/led_row", listener);
-		oscPortIn.addListener("/" + prefix + "/clear", listener);
-		oscPortIn.addListener("/" + prefix + "/tiltmode", listener);
-		oscPortIn.addListener("/androidome/sucess", listener);
-		oscPortIn.startListening();
-
 	}
 
 	// create a method for the addressChanged action
@@ -219,13 +221,13 @@ public class MonomeView extends View{
 		}
 
 		Object[] oscArgs = {deviceIPAddress};
-		OSCMessage oscMsgIP = new OSCMessage("/androidome/setup", oscArgs);
-		OSCMessage oscMsgPrefix = new OSCMessage("/sys/prefix /" + prefix, null);
+		OSCMessageOut oscMsgIP = new OSCMessageOut("/androidome/setup", oscArgs);
+		OSCMessageOut oscMsgPrefix = new OSCMessageOut("/sys/prefix /" + prefix, null);
 
 		try {
 			oscPortOut.send(oscMsgIP);
 			oscPortOut.send(oscMsgPrefix);
-			//Log.i("OSC", "Outbound: " + oscMsgIP.getAddress() + " " + oscArgs[0]);
+			Log.i("OSC", "Outbound: " + oscMsgIP.getAddress() + " " + oscArgs[0]);
 		} catch (IOException e) {
 			Log.e("IOException", e.toString());
 		}
@@ -235,11 +237,20 @@ public class MonomeView extends View{
 	// stop listeners/animation  when app looses focus
 	public void pauseMonomeGrid(){
 
-		// close up OSC listeners when app not running
-		oscPortIn.stopListening();
-		oscPortIn.close();
+		// close up the listeners
+		if(rcv != null){
+			l("interesting");
+			rcv.dispose();
+
+		}else if(dch != null){
+			try {
+				dch.close();
+			}catch( IOException e4 ) {
+				e4.printStackTrace();
+			}
+		}
+
 		oscPortOut.close();
-		listener = null;
 
 		// pause the animation thread
 		runMode = PAUSE;
@@ -297,9 +308,6 @@ public class MonomeView extends View{
 
 			// Save the ID of this pointer 
 			list.add(first);
-
-			//Log.i("ACTION_DOWN", pointerId + " " + pointerIndex);
-
 			break;
 		}
 		case MotionEvent.ACTION_POINTER_DOWN: {
@@ -318,9 +326,6 @@ public class MonomeView extends View{
 			TouchStream subsequent = new TouchStream(x, y, pointerIndex);
 
 			list.add(subsequent);
-
-			//Log.i("ACTION_POINTER_DOWN", pointerId + " " + pointerIndex);
-
 			break;
 		}
 
@@ -390,11 +395,9 @@ public class MonomeView extends View{
 	// click handler for button grid
 	// 1 down, 0 up
 	public void sendTouch(int posX, int posY, int actionCode) {
-		String test =  posX + " " + posY + " ";
-		test += (actionCode == 0) ? "Up" : "Down";
 
 		Object[] oscArgs = {new Integer(posX), new Integer(posY), new Integer(actionCode)};
-		OSCMessage oscMsg = new OSCMessage("/" + prefix + "/press", oscArgs);
+		OSCMessageOut oscMsg = new OSCMessageOut("/" + prefix + "/press", oscArgs);
 
 		try {
 			oscPortOut.send(oscMsg);
@@ -406,12 +409,10 @@ public class MonomeView extends View{
 
 	public void setDeviceIPAddress(String deviceIPAddress) {
 		this.deviceIPAddress = deviceIPAddress;
-		//Log.i("IP", deviceIPAddress);
 	}
 
 	public void setHostIPAddress(String hostIPAddress) {
 		this.hostIPAddress = hostIPAddress;
-		//Log.i("IP", hostIPAddress);
 	}
 
 	public String getHostIPAddress() {
@@ -423,7 +424,7 @@ public class MonomeView extends View{
 	}
 
 	public void l(Object i){
-		//Log.i("Test", i.toString());
+		Log.i("Test", i.toString());
 	}
 
 	@Override
