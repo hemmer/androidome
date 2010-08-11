@@ -1,9 +1,14 @@
 package uk.co.ewanhemingway.androidome;
 
+import java.util.List;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
@@ -30,6 +35,21 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 	EditText prefixTextBox;
 
 	private MonomeView _monomeView;
+
+	private static SensorManager mySensorManager;
+	private boolean sensorrunning;
+
+	// implement SensorEventListener to track phone changes
+	private SensorEventListener mySensorEventListener = new SensorEventListener() {
+
+		@Override
+		public void onSensorChanged(SensorEvent event) {
+			sendTilt((int) event.values[1], (int) event.values[2]);
+		}
+
+		@Override
+		public void onAccuracyChanged(Sensor sensor, int accuracy) { }
+	};
 
 	/** Called when the activity is first created. */
 	@Override
@@ -92,24 +112,32 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 		Button helpButton = (Button) findViewById(R.id.help_button);
 		helpButton.setOnClickListener(this);
 
+		// set up sensor listeners
+		mySensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
+		List<Sensor> mySensors = mySensorManager.getSensorList(Sensor.TYPE_ORIENTATION);
+
+		if(mySensors.size() > 0){
+			mySensorManager.registerListener(mySensorEventListener, mySensors.get(0), SensorManager.SENSOR_DELAY_NORMAL);
+			sensorrunning = true;
+		}else sensorrunning = false;
+
 		_monomeView = (MonomeView)findViewById(R.id.monome_grid);
-		prepareMonomeGrid();
 	}
 
 	// set up monome grid for action
 	private void prepareMonomeGrid(){
 
 		// set the default dummy address
-		// this shouldn't be used
+		// this shouldn't ever be used
 		_monomeView.setDeviceIPAddress("127.0.0.1");
-		
+
 		// find IP address of phone
 		WifiManager wifiManager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
-		
+
 		// make sure wi-fi is enabled
 		if(wifiManager.isWifiEnabled()){
 			WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-			
+
 			// and that we are connected
 			if(wifiInfo.getNetworkId() == -1){
 				showToast("Please make sure you are connected to the same network as the host");
@@ -119,7 +147,7 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 		}else{
 			showToast("Please enable Wifi to continue");
 		}
-		
+
 		// read host ip from textbox and inform _monomeView
 		_monomeView.setHostIPAddress(hostTextBox.getText().toString());
 
@@ -179,7 +207,6 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 		switch (v.getId()) {
 		case R.id.connect_button:
 			prepareMonomeGrid();
-			_monomeView.pingMaxWithSetupData();
 			break;
 
 		case R.id.help_button:
@@ -193,6 +220,10 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 	@Override
 	public void onPause(){
 		super.onPause();
+
+		if(sensorrunning) mySensorManager.unregisterListener(mySensorEventListener);
+
+
 		// stop threads/listeners
 		_monomeView.pauseMonomeGrid();
 	}
@@ -217,5 +248,13 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 
 		// make sure we commit the edits!
 		editor.commit();
+	}
+
+	// pass the tilt messages to the monome class,
+	// and convert to the specified format.
+	private void sendTilt(int xTilt, int yTilt){
+		xTilt = (xTilt + 90)*255/180;
+		yTilt = (yTilt + 90)*255/180;
+		_monomeView.sendTiltOSC(xTilt, yTilt);
 	}
 }
