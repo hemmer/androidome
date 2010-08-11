@@ -39,7 +39,7 @@ public class MonomeView extends View{
 	String prefix = " ";
 	String deviceIPAddress = " ";
 	String hostIPAddress = "192.168.1.164";
-	boolean sendTiltOSC = false;
+	boolean sendingTiltOSC = false;
 
 	Boolean[][] gridLit;
 
@@ -144,9 +144,10 @@ public class MonomeView extends View{
 							resetGrid(flag);
 						} // check for message to turn on tilt reporting
 						// should be off by default
-						//						else if(address.equalsIgnoreCase("tiltmode") && numArgs == 1){
-						//							setTiltMode( Integer.parseInt(args[0].toString()) == 1);
-						//						}
+						else if(address.equalsIgnoreCase("tiltmode") && numArgs == 1){
+							boolean flag = message.getArg(0).toString().equalsIgnoreCase("1");
+							setTiltMode(flag);
+						}
 					}
 
 				}
@@ -160,10 +161,7 @@ public class MonomeView extends View{
 
 	}
 
-	// turn reporting of tilt messages on or off
-	public void setTiltMode(boolean sendTiltOSC){
-		this.sendTiltOSC = sendTiltOSC;
-	}
+
 
 	private void setLEDCol(int col, int value) {
 		int check = 1;
@@ -171,9 +169,7 @@ public class MonomeView extends View{
 			try{
 				gridLit[col][i] = ((value & check) != 0);
 			}catch(ArrayIndexOutOfBoundsException e){
-				l(col + " " + i);
 				e.printStackTrace();
-
 			}
 			check = check << 1;  
 		}
@@ -182,7 +178,11 @@ public class MonomeView extends View{
 	private void setLEDRow(int row, int value) {
 		int check = 1;
 		for(int i = 0; i < GRID_HEIGHT; i++){
-			gridLit[i][row] = ((value & check) != 0);
+			try{
+				gridLit[i][row] = ((value & check) != 0);
+			}catch(ArrayIndexOutOfBoundsException e){
+				e.printStackTrace();
+			}
 			check = check << 1;  
 		}
 	}
@@ -213,9 +213,7 @@ public class MonomeView extends View{
 		// the variable OSCPortOut tries to get an instance of OSCPortOut at the address
 		try {
 			oscPortOut = new OSCPortOut(InetAddress.getByName(hostIPAddress));   
-			//Log.i("Connection Info", "Connected to: " + hostIPAddress);
 			// if the oscPort variable fails to be instantiated then sent the error message
-
 		} catch (Exception e) {
 			Log.e("Connection Error", "Couldn't set address" + e);
 		}
@@ -224,14 +222,8 @@ public class MonomeView extends View{
 		OSCMessageOut oscMsgIP = new OSCMessageOut("/androidome/setup", oscArgs);
 		OSCMessageOut oscMsgPrefix = new OSCMessageOut("/sys/prefix /" + prefix, null);
 
-		try {
-			oscPortOut.send(oscMsgIP);
-			oscPortOut.send(oscMsgPrefix);
-			Log.i("OSC", "Outbound: " + oscMsgIP.getAddress() + " " + oscArgs[0]);
-		} catch (IOException e) {
-			Log.e("IOException", e.toString());
-		}
-
+		sendOSCMessage(oscMsgIP);
+		sendOSCMessage(oscMsgPrefix);
 	}
 
 	// stop listeners/animation  when app looses focus
@@ -239,9 +231,7 @@ public class MonomeView extends View{
 
 		// close up the listeners
 		if(rcv != null){
-			l("interesting");
 			rcv.dispose();
-
 		}else if(dch != null){
 			try {
 				dch.close();
@@ -301,7 +291,7 @@ public class MonomeView extends View{
 			// exclude touches outside the grid
 			if(x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) return true;
 
-			sendTouch(x, y, 1);
+			sendTouchOSC(x, y, 1);
 			final int pointerIndex = (action & MotionEvent.ACTION_POINTER_ID_MASK) >> MotionEvent.ACTION_POINTER_ID_SHIFT;
 
 			TouchStream first = new TouchStream(x, y, pointerIndex);
@@ -321,7 +311,7 @@ public class MonomeView extends View{
 			// exclude touches outside the grid
 			if(x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) return true;
 
-			sendTouch(x, y, 1);
+			sendTouchOSC(x, y, 1);
 
 			TouchStream subsequent = new TouchStream(x, y, pointerIndex);
 
@@ -343,18 +333,18 @@ public class MonomeView extends View{
 				if(x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT){
 
 					// send the last stored position
-					sendTouch(temp.getX(), temp.getY(), 0);
+					sendTouchOSC(temp.getX(), temp.getY(), 0);
 					return true;
 				}
 
 				// if we leave the previous square
 				if(x != temp.getX() || y != temp.getY()){
 					//send leave message
-					sendTouch(temp.getX(), temp.getY(), 0);
+					sendTouchOSC(temp.getX(), temp.getY(), 0);
 					// change current square coordinates
 					temp.setX(x);
 					temp.setY(y);
-					sendTouch(x, y, 1);
+					sendTouchOSC(x, y, 1);
 				}
 			}
 			break;
@@ -366,7 +356,7 @@ public class MonomeView extends View{
 			// this should only be the remaining item
 			if(list.size() != 0){
 				TouchStream temp = list.get(0);
-				sendTouch(temp.getX(), temp.getY(), 0);
+				sendTouchOSC(temp.getX(), temp.getY(), 0);
 				list.remove(0);
 			}
 			break;
@@ -380,7 +370,7 @@ public class MonomeView extends View{
 			while(iter.hasNext()){
 				TouchStream temp = iter.next();
 				if(temp.getId() == pointerIndex){
-					sendTouch(temp.getX(), temp.getY(), 0);
+					sendTouchOSC(temp.getX(), temp.getY(), 0);
 					iter.remove();
 				}
 			}
@@ -393,17 +383,24 @@ public class MonomeView extends View{
 	} 
 
 	// click handler for button grid
-	// 1 down, 0 up
-	public void sendTouch(int posX, int posY, int actionCode) {
-
+	// actionCode: 1 down, 0 up
+	public void sendTouchOSC(int posX, int posY, int actionCode) {
 		Object[] oscArgs = {new Integer(posX), new Integer(posY), new Integer(actionCode)};
-		OSCMessageOut oscMsg = new OSCMessageOut("/" + prefix + "/press", oscArgs);
+		OSCMessageOut touchMsg = new OSCMessageOut("/" + prefix + "/press", oscArgs);
+		sendOSCMessage(touchMsg);
+	}
 
-		try {
-			oscPortOut.send(oscMsg);
-			//Log.i("OSC", "Outbound: " + oscMsg.getAddress() + " " + oscArgs[0] + " " + oscArgs[1] + " " + oscArgs[2]);
-		} catch (IOException e) {
-			Log.e("IOException", e.toString());
+	public void sendTiltOSC(int xTilt, int yTilt) {
+		if(sendingTiltOSC){
+			//tidy up messages
+			if(xTilt < 0) xTilt = -xTilt;
+			if(yTilt < 0) yTilt = -yTilt;
+			if(xTilt > 255) xTilt -= 256;
+			if(yTilt > 255) yTilt -= 256;
+
+			Object[] oscArgs = {xTilt, yTilt};
+			OSCMessageOut oscMsg = new OSCMessageOut("/" + prefix + "/tilt", oscArgs);
+			sendOSCMessage(oscMsg);
 		}
 	}
 
@@ -430,5 +427,19 @@ public class MonomeView extends View{
 	@Override
 	public void onWindowFocusChanged (boolean hasFocus){
 		cellSize = this.getWidth()/GRID_WIDTH;
-	}	
+	}
+
+	// send a OSC message over the network
+	private void sendOSCMessage(OSCMessageOut msg){
+		try {
+			oscPortOut.send(msg);
+		} catch (IOException e) {
+			Log.e("IOException", e.toString());
+		}
+	}
+	
+	// turn reporting of tilt messages on or off
+	public void setTiltMode(boolean sendTiltOSC){
+		this.sendingTiltOSC = sendTiltOSC;
+	}
 }
