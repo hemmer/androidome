@@ -9,12 +9,6 @@
 		android:layout_weight="1" android:background="@color/background"
 		android:layout_alignParentTop="true"></uk.co.ewanhemingway.androidome.MonomeView>
 
-	<RelativeLayout android:layout_height="wrap_content"
-		android:layout_width="fill_parent" android:layout_below="@+id/monome_grid">
-		<ImageView android:id="@+id/imagebutton" android:src="@drawable/logo"
-			android:layout_width="wrap_content" android:layout_height="wrap_content" />
-	</RelativeLayout>
-
 	<RelativeLayout android:orientation="horizontal"
 		android:layout_alignParentBottom="true" android:layout_height="wrap_content"
 		android:layout_width="fill_parent">

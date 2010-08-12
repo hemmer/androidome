@@ -53,8 +53,8 @@ public class MonomeView extends View{
 
 	ArrayList<TouchStream> list = new ArrayList<TouchStream>();
 
+	// animation stuff
 	private RefreshHandler _redrawHandler = new RefreshHandler();
-
 	class RefreshHandler extends Handler {
 
 		@Override
@@ -72,8 +72,6 @@ public class MonomeView extends View{
 	private void update() {
 		if(runMode == RUNNING) _redrawHandler.sleep(_moveDelay);
 	}
-
-	long start;
 
 	public MonomeView(Context context, AttributeSet attrs) {
 		super(context, attrs);
@@ -246,6 +244,7 @@ public class MonomeView extends View{
 		runMode = PAUSE;
 	}
 
+	// paint the grid etc
 	protected void onDraw(Canvas canvas) {
 		Paint background = new Paint();
 		background.setColor(getResources().getColor(R.color.background));
@@ -274,7 +273,7 @@ public class MonomeView extends View{
 		}
 	}
 
-	// check use floats maybe faster?
+	// Handles multitouch input, dragging etc
 	@Override 
 	public boolean onTouchEvent(MotionEvent ev) { 
 
@@ -390,6 +389,7 @@ public class MonomeView extends View{
 		sendOSCMessage(touchMsg);
 	}
 
+	// send OSC messages about phone orientation
 	public void sendTiltOSC(int xTilt, int yTilt) {
 		if(sendingTiltOSC){
 			//tidy up messages
@@ -403,7 +403,9 @@ public class MonomeView extends View{
 			sendOSCMessage(oscMsg);
 		}
 	}
-
+	
+	
+	// getters and setters
 	public void setDeviceIPAddress(String deviceIPAddress) {
 		this.deviceIPAddress = deviceIPAddress;
 	}
@@ -424,6 +426,8 @@ public class MonomeView extends View{
 		Log.i("Test", i.toString());
 	}
 
+	// find device screen size so as to draw 
+	// grid correctly
 	@Override
 	public void onWindowFocusChanged (boolean hasFocus){
 		cellSize = this.getWidth()/GRID_WIDTH;
