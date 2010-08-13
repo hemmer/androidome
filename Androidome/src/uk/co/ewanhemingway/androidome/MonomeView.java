@@ -75,10 +75,10 @@ public class MonomeView extends View{
 
 	public MonomeView(Context context, AttributeSet attrs) {
 		super(context, attrs);
-
 		initialiseMonomeGrid();
 	}
 
+	// clear grid
 	public void initialiseMonomeGrid(){
 		// start animation thread
 		runMode = RUNNING;
@@ -88,10 +88,14 @@ public class MonomeView extends View{
 		gridLit = new Boolean[8][8];
 		// and clear it 
 		resetGrid(false);
+	}
+	
+	// set up OSC listeners etc
+	public void initialiseIncomingOSC(){
 
 		rcv = null;
 		dch = null;
-
+		
 		try {
 			final SocketAddress incomingPort = new InetSocketAddress(8080);
 
@@ -105,6 +109,9 @@ public class MonomeView extends View{
 					String address = message.getName().trim();
 					int numArgs = message.getArgCount();
 
+					// avoid String null pointer
+					if(address.length() <= prefix.length()) return;
+					
 					// if the incoming messages are addressed to us,
 					// i.e incoming prefix matches the stored prefix 
 					if(address.substring(1, prefix.length()+1).equalsIgnoreCase(prefix)){

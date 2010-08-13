@@ -1,6 +1,7 @@
 package uk.co.ewanhemingway.androidome;
 
 import java.util.List;
+
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -127,6 +128,12 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 	// set up monome grid for action
 	private void prepareMonomeGrid(){
 
+		// start UI threads, clear grid
+		_monomeView.initialiseMonomeGrid();
+
+		// initialise OSC listener
+		_monomeView.initialiseIncomingOSC();
+		
 		// set the default dummy address
 		// this shouldn't ever be used
 		_monomeView.setDeviceIPAddress("127.0.0.1");
@@ -140,12 +147,12 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 
 			// and that we are connected
 			if(wifiInfo.getNetworkId() == -1){
-				showToast("Please make sure you are connected to the same network as the host");
+				showToast("Please make sure you are connected to the same network as the host.");
 			}else{
 				_monomeView.setDeviceIPAddress(intToIp(wifiInfo.getIpAddress()));
 			}
 		}else{
-			showToast("Please enable Wifi to continue");
+			showToast("Please enable Wifi to continue.");
 		}
 
 		// read host ip from textbox and inform _monomeView
@@ -165,7 +172,6 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 		String prefix = prefixTextBox.getText().toString();
 		// tell user/log
 		showToast("Prefix set to: " + prefix.toString());
-		//Log.i("Androidome", "Prefix set to: " + prefix.toString());
 
 		// update the monome grid object
 		_monomeView.setPrefix(prefix.toString());
@@ -178,7 +184,6 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 		String host = hostTextBox.getText().toString();
 		// tell user/log
 		showToast("Host set to: " + host);
-		//Log.i("Androidome", "Host set to: " + host);
 
 		// update the monome grid object, 
 		// and check with Max
@@ -206,7 +211,7 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 	public void onClick(View v) {
 		switch (v.getId()) {
 		case R.id.connect_button:
-			prepareMonomeGrid();
+			_monomeView.pingMaxWithSetupData();
 			break;
 
 		case R.id.help_button:
@@ -223,7 +228,6 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 
 		if(sensorrunning) mySensorManager.unregisterListener(mySensorEventListener);
 
-
 		// stop threads/listeners
 		_monomeView.pauseMonomeGrid();
 	}
@@ -234,7 +238,7 @@ public class AndroidomeMain extends Activity implements OnClickListener{
 		super.onResume();
 		prepareMonomeGrid();
 	}
-
+	
 	// write prefs when app is stopped 
 	@Override
 	protected void onStop(){
